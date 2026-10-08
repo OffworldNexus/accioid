@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+allure-results/
+test-results/
+.coverage
+htmlcov/
+
+# Local dev scratch (throwaway HA instance)
+.dev/
+
+# Local env
+.env
+.env.*
+/tmp/
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
