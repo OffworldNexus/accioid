@@ -12,7 +12,7 @@ failures; pass an explicit timeout (≈2× the measured wall time).
 
 - **Python static** (ruff format check, ruff check, mypy): `make ha-lint`
   (~1s; timeout 120000ms)
-- **Python tests** (unit + BDD): `uv run pytest`
+- **Python tests** (unit + BDD): `uv run --frozen pytest`
   (~1s; timeout 300000ms)
 - **Single Python test**: `uv run pytest tests/test_telperion.py::test_name`
 - **Everything**: `make lint` and `make test`
@@ -21,4 +21,9 @@ failures; pass an explicit timeout (≈2× the measured wall time).
   `make ha-dev-logs` / `make ha-dev-stop` / `make ha-dev-reset`
   (first image pull + boot can take minutes; timeout 600000ms)
 
-Last measured: 2026-10-08 — Python 19 passed (~1s), `make ha-lint` green.
+CI also validates config/HA/HACS metadata (`uv run --frozen scripts/ci_validate.py`),
+ShellCheck/Bash syntax, frontend JavaScript syntax, Docker Compose config, and
+wheel/sdist contents (`uv build --no-sources` then
+`uv run --frozen scripts/ci_validate.py --dist dist`). No dev HA startup needed.
+
+Last measured: 2026-10-09 — Python 31 passed (1.3s), static/config/build checks green.

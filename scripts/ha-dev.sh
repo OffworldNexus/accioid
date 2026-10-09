@@ -57,11 +57,12 @@ default_config:
 # The card is injected by the integration; the frontend must be up for that.
 frontend:
 
-# The seeded fixture the first hard-coded check watches.
+# The seeded fixture the first hard-coded check watches. The "Tree of Valinor"
+# label is attached by scripts/ha-provision.py, so no restart is needed.
 input_boolean:
   telperion:
     name: Telperion
-    icon: mdi:lightbulb
+    icon: mdi:tree
 
 logger:
   default: info
@@ -132,7 +133,7 @@ case "${1:-up}" in
     up-fg)
         require_docker
         seed_config
-        # Foreground mode; the compose file sets `init: true` so Ctrl+C works.
+        # Foreground mode; keep HA's s6-overlay as PID 1 (no `init: true`).
         "${COMPOSE[@]}" up
         ;;
     logs) cmd_logs ;;

@@ -11,6 +11,12 @@ NAME: Final = "Accioid"
 #: instance and is expected to be a normal Home Assistant virtual switch.
 TELPERION_ENTITY_ID: Final = "input_boolean.telperion"
 
+#: Label id marking an entity as one of the Trees of Valinor. Labels are the
+#: only marker: they can be assigned at runtime in the UI (or over the registry
+#: API), so marked switches need no restart and are picked up as soon as they
+#: appear.
+LABEL_TREE_OF_VALINOR: Final = "tree_of_valinor"
+
 # -- Home Assistant bus events (the push path for automations) ---------------
 
 EVENT_ACTION_CREATED: Final = f"{DOMAIN}_action_created"

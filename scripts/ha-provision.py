@@ -34,6 +34,8 @@ DEFAULT_USER = "dev"
 DEFAULT_PASSWORD = "dev"
 READY_TIMEOUT = 300  # seconds (first boot on a new version can be slow)
 DEV_AREA_NAME = "Dev Room"
+DEV_LABEL_NAME = "Tree of Valinor"
+DEV_LABEL_ID = "tree_of_valinor"
 TELPERION_ENTITY_ID = "input_boolean.telperion"
 
 
@@ -238,8 +240,8 @@ def ensure_config_entry(base: str, token: str) -> None:
         print(f"warning: creating the Accioid entry returned {code}: {payload}")
 
 
-async def assign_dev_area(base: str, token: str) -> None:
-    """Put the Telperion switch in a dev area over the WebSocket API."""
+async def seed_registries(base: str, token: str) -> None:
+    """Area + "Tree of Valinor" label for the Telperion switch, over WebSocket."""
     ws_url = base.replace("http", "ws", 1) + "/api/websocket"
     timeout = aiohttp.ClientTimeout(total=30)
     async with (
@@ -262,16 +264,32 @@ async def assign_dev_area(base: str, token: str) -> None:
             )
             area = await _ws_result(ws, 2)
 
+        await ws.send_json({"id": 3, "type": "config/label_registry/list"})
+        labels = await _ws_result(ws, 3)
+        if not any(label["label_id"] == DEV_LABEL_ID for label in labels):
+            await ws.send_json(
+                {
+                    "id": 4,
+                    "type": "config/label_registry/create",
+                    "name": DEV_LABEL_NAME,
+                }
+            )
+            await _ws_result(ws, 4)
+
         await ws.send_json(
             {
-                "id": 3,
+                "id": 5,
                 "type": "config/entity_registry/update",
                 "entity_id": TELPERION_ENTITY_ID,
                 "area_id": area["area_id"],
+                "labels": [DEV_LABEL_ID],
             }
         )
-        await _ws_result(ws, 3)
-        print(f"assigned {TELPERION_ENTITY_ID} to area '{DEV_AREA_NAME}'")
+        await _ws_result(ws, 5)
+        print(
+            f"assigned {TELPERION_ENTITY_ID} to area '{DEV_AREA_NAME}' "
+            f"and labelled it '{DEV_LABEL_NAME}'"
+        )
 
 
 async def _ws_result(ws: aiohttp.ClientWebSocketResponse, msg_id: int) -> object:
@@ -303,9 +321,10 @@ def provision(base: str, username: str, password: str) -> int:
     if token is None:
         return 1
 
-    # Seed the fixture area before creating the entry: setting the entry up
-    # runs the checks immediately, and the first action must already be scoped.
-    asyncio.run(assign_dev_area(base, token))
+    # Seed the fixture area and label before creating the entry: setting the
+    # entry up runs the checks immediately, and the first action must already be
+    # scoped and marked.
+    asyncio.run(seed_registries(base, token))
     ensure_config_entry(base, token)
 
     print(f"provisioning complete — log in at {base} as {username} / {password}")

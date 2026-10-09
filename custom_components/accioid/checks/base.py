@@ -1,9 +1,12 @@
-"""The check abstraction: a compiled-in rule that inspects Home Assistant.
+"""The check abstraction: a compiled-in rule over a set of entities.
 
-A check is evaluated on start-up and whenever one of the entities it watches
-changes. It never mutates the store itself -- it returns findings and the
-engine applies the open/close lifecycle. That keeps each rule declarative and
-the lifecycle in exactly one place.
+A check describes the entities it cares about with a Home Assistant entity
+filter -- the same include/exclude config used by history and the recorder.
+The engine watches that query, offers every matching entity to
+:meth:`Check.is_interested` and, for the ones the check accepts, calls
+:meth:`Check.evaluate`. Entities created after start-up are offered as soon as
+they appear, so a check never hard-codes an entity id or listens for anything
+itself.
 """
 
 from __future__ import annotations
@@ -20,7 +23,7 @@ if TYPE_CHECKING:
 
 @dataclass(slots=True)
 class Finding:
-    """One situation a check observed, either active or resolved.
+    """One situation a check observed for one entity, active or resolved.
 
     ``key`` is the situation's stable identity and is always present, so a
     resolved finding (``active=False``) still points at the action to close.
@@ -37,13 +40,34 @@ class Finding:
 
 
 class Check(ABC):
-    """A compiled-in rule that produces findings from current HA state."""
+    """A compiled-in rule that selects a set of entities, then evaluates them."""
 
     @property
     @abstractmethod
-    def watched_entities(self) -> tuple[str, ...]:
-        """Return the entity ids whose changes should re-trigger evaluation."""
+    def entity_filter(self) -> dict[str, Any]:
+        """Return an entity-filter config selecting the candidate entities.
+
+        The config uses the standard Home Assistant keys ``include_domains``,
+        ``include_entity_globs``, ``include_entities`` and their ``exclude_``
+        counterparts. Every entity currently -- or later -- matching it is
+        offered to :meth:`is_interested`.
+        """
+
+    def is_interested(self, hass: HomeAssistant, entity_id: str) -> bool:
+        """Return whether the check cares about a candidate entity.
+
+        This is the second stage after the filter: the filter casts a wide net,
+        and this decides, entity by entity, whether the rule applies. It is
+        called with the entity's *current* state present (except on removal),
+        so it may inspect state, attributes or the registry.
+        """
+        return True
 
     @abstractmethod
-    def evaluate(self, hass: HomeAssistant) -> list[Finding]:
-        """Inspect the current state and return this check's findings."""
+    def evaluate(self, hass: HomeAssistant, entity_id: str) -> Finding | None:
+        """Return the finding for one accepted entity, or ``None``.
+
+        Called on start-up, on every state change, when the entity appears and
+        just before it disappears -- so an inactive finding closes the action
+        when the entity is removed.
+        """
