@@ -1,0 +1,45 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Accioid",
+        "description": "Add Accioid to Home Assistant. It evaluates your checks and surfaces the resulting actions."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Accioid is already set up."
+    }
+  },
+  "services": {
+    "list_actions": {
+      "name": "List actions",
+      "description": "List current and past Accioid actions, filterable and paginated.",
+      "fields": {
+        "state": {
+          "name": "State",
+          "description": "Only return actions in this state (open or closed)."
+        },
+        "disposition": {
+          "name": "Disposition",
+          "description": "Only return actions with this disposition (normal, snoozed or ignored)."
+        },
+        "severity": {
+          "name": "Severity",
+          "description": "Only return actions with this severity (maintenance, suggestion or emergency)."
+        },
+        "area_id": {
+          "name": "Area",
+          "description": "Only return actions scoped to this area id."
+        },
+        "limit": {
+          "name": "Limit",
+          "description": "Maximum number of actions to return."
+        },
+        "offset": {
+          "name": "Offset",
+          "description": "Number of actions to skip before returning the page."
+        }
+      }
+    }
+  }
+}

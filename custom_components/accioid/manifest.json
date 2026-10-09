@@ -1,0 +1,14 @@
+{
+  "domain": "accioid",
+  "name": "Accioid",
+  "version": "0.1.0",
+  "config_flow": true,
+  "documentation": "https://github.com/OffworldNexus/accioid",
+  "issue_tracker": "https://github.com/OffworldNexus/accioid/issues",
+  "codeowners": ["@Xowap"],
+  "dependencies": [],
+  "after_dependencies": ["frontend"],
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "loggers": ["custom_components.accioid"]
+}

@@ -1,0 +1,144 @@
+[project]
+name = "accioid"
+version = "0.1.0"
+description = "Home Assistant custom integration that turns checks into actions"
+license = { text = "MIT" }
+authors = [
+    { name = "Rémy Sanchez", email = "remy.sanchez@hyperthese.net" },
+]
+requires-python = ">=3.13.2"
+dependencies = [
+    "homeassistant==2026.2.3",
+]
+
+[dependency-groups]
+dev = [
+    "ruff==0.16.10",
+    "mypy==2.4.0",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-homeassistant-custom-component==0.13.316",
+    "pytest-bdd==9.0.0",
+    "allure-pytest-bdd==2.16.2",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.mypy]
+# Home Assistant custom components live outside the `homeassistant` package and
+# are loaded dynamically; HA ships no type stubs for third-party integrations.
+# A good chunk of the HA API is annotated, but several helpers are not, so we
+# keep the checks pragmatic: catch real errors without demanding stubs.
+python_version = "3.13"
+check_untyped_defs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["homeassistant.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["voluptuous.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+# Quiet on pass, verbose on fail: short tracebacks + summary of non-passes, and
+# Allure results always written (report rendering is a separate step).
+addopts = [
+    "-q",
+    "-ra",
+    "--tb=short",
+    "--alluredir=allure-results",
+    "--clean-alluredir",
+]
+markers = [
+    "bdd: pytest-bdd scenarios (Telperion lifecycle + read API)",
+]
+
+[tool.ruff]
+target-version = "py313"
+# Generated throwaway dev config and caches are not Python we own.
+exclude = [
+    ".venv",
+    ".dev",
+    "allure-results",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests: fixtures shadow args, asserts are the point, and long expected-value
+# literals/docstrings are clearer unwrapped. Test modules are not a package.
+"tests/**/*.py" = ["ARG001", "S101", "E501", "S105", "S106", "INP001", "PT011", "TC001", "TC002", "TC003"]
+# Step definitions read as prose; the scenario name already documents them.
+"tests/features/**/*.py" = ["ARG001", "S101", "E501", "S105", "S106", "INP001", "D103", "TC001", "TC002", "TC003"]
+# Standalone, uv-run developer CLIs at the repo root (dev-HA provisioner):
+# prints, CLI help strings, placeholder credentials for the throwaway dev
+# instance and urllib URL opens are expected.
+"scripts/*.py" = ["T201", "BLE001", "E501", "D103", "C901", "INP001", "S105", "S106", "S310"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components", "tests"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint]
+select = [
+    # -- Core --
+    "E",  # pycodestyle (errors)
+    "W",  # pycodestyle (warnings)
+    "F",  # Pyflakes
+    "I",  # isort
+    "C90",  # McCabe Complexity
+    "D1",  # Mandatory docstrings
+    "S",  # Bandit
+
+    # -- Bonus --
+    "A",  # flake8-bugbear
+    "B",  # flake8-bugbear
+    "DTZ",  # date/time zone
+    "T10",  # debugger
+    "EM",  # error messages
+    "EXE",  # executable
+    "G",  # logging
+    "UP",  # pyupgrade
+    "ASYNC",  # async
+    "INP",  # PEP 420
+    "T20",  # no print
+    "PT",  # pytest
+    "SLOT",  # slots
+    "TCH",  # type checking blocks
+    "PTH",  # Use pathlib
+    "FIX",  # Don't allow not done stuff in code
+    "ERA",  # Don't comment code
+    "RUF",  # Ruff stuff
+    "TID251",  # Banned imports (See below)
+]
+
+# Idioms we deliberately allow:
+#   RUF012 -- immutable class attributes are the canonical style here.
+#   D104   -- package __init__.py files don't need docstrings.
+#   D105   -- magic methods are self-describing.
+#   D106   -- nested config classes are pure configuration.
+ignore = ["RUF012", "D104", "D105", "D106"]
+
+[tool.ruff.format]
+exclude = [
+    ".venv",
+    ".dev",
+    "allure-results",
+]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"requests".msg = "Use `httpx`/`aiohttp` instead, which have timeouts by default."
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Preserve HA's custom_components namespace instead of collapsing to accioid/.
+only-include = ["custom_components/accioid"]

@@ -1,0 +1,24 @@
+name: accioid
+
+services:
+  homeassistant:
+    # Throwaway Accioid development instance. Never production.
+    image: ${ACCIOID_HA_IMAGE:-ghcr.io/home-assistant/home-assistant:stable}
+    container_name: accioid-ha
+    # Bridge networking with a dedicated published port (8124 by default) so
+    # the dev instance can run beside a regular Home Assistant on 8123. Unlike
+    # Screensight, Accioid has no mDNS dependency, so it does not need host
+    # networking.
+    ports:
+      - "${ACCIOID_HA_PORT:-8124}:8123"
+    # NOTE: do not add `init: true` — Home Assistant's s6-overlay must be PID 1.
+    # Ctrl+C safety comes from running detached and following logs separately.
+    # Run as the invoking user so bind-mounted config files stay owned by you
+    # (and are therefore removable without sudo).
+    user: "${ACCIOID_HA_UID:-1000}:${ACCIOID_HA_GID:-1000}"
+    restart: "no"
+    stop_grace_period: 15s
+    environment:
+      TZ: ${TZ:-UTC}
+    volumes:
+      - ${ACCIOID_HA_CONFIG:?set by scripts/ha-dev.sh}:/config
